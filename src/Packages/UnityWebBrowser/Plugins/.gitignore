@@ -1,2 +1,9 @@
 *.pdb
 *.xml
+
+# CAXperts: the Shared build output is committed so that this package can be consumed straight from a git URL.
+# Upstream expects consumers to run src/DevScripts/build_shared.py first, which a UPM git reference cannot do.
+# Regenerate with: dotnet build src/VoltstroStudios.UnityWebBrowser.Shared -c ReleaseUnity -f netstandard2.1
+!VoltstroStudios.UnityWebBrowser.Shared.dll
+!VoltstroStudios.UnityWebBrowser.Shared.pdb
+!VoltstroStudios.UnityWebBrowser.Shared.xml
