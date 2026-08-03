@@ -461,6 +461,16 @@ namespace VoltstroStudios.UnityWebBrowser.Core
             //Final built arguments
             string arguments = argsBuilder.ToString();
 
+            //Additional arguments from the environment. The engine's argument parser ignores tokens it does not
+            //know (TreatUnmatchedTokensAsErrors is false) and hands its raw argv to CefMainArgs, so Chromium
+            //switches such as --ozone-platform=wayland reach the Chromium command line unchanged.
+            string additionalArgs = Environment.GetEnvironmentVariable("CEF_ADDITIONAL_ARGS");
+            if (!string.IsNullOrWhiteSpace(additionalArgs))
+            {
+                arguments = $"{arguments} {additionalArgs}";
+                logger.Debug($"Appending additional engine arguments from CEF_ADDITIONAL_ARGS: {additionalArgs}");
+            }
+
             //Setup communication manager
             cancellationSource = new CancellationTokenSource();
             communicationsManager = new WebBrowserCommunicationsManager(this, cancellationSource);
