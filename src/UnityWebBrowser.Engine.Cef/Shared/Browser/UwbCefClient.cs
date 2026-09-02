@@ -164,29 +164,52 @@ internal class UwbCefClient : CefClient, IDisposable
             CefKeyEvent keyEvent = new()
             {
                 WindowsKeyCode = (int)key,
+#if MACOS
+                NativeKeyCode = UwbCefClientUtils.GetMacNativeKeyCode(key),
+#endif
                 EventType = CefKeyEventType.KeyDown,
                 Modifiers = modifiers | UwbCefClientUtils.GetKeyDirection(key)
             };
-            
+
             browserHost.SendKeyEvent(keyEvent);
         }
 
         //Keys up
         foreach (WindowsKey key in keyboardEvent.KeysUp)
         {
+#if MACOS
+            //On macOS, CEF's off-screen path forces every non-Char event it receives to arrive at
+            //the renderer as KEYEVENT_RAWKEYDOWN - verified with CefKeyboardHandler.OnPreKeyEvent
+            //plus in-page listeners: sending KeyDown + KeyUp produces two keydown events and no
+            //keyup at all, so a single Backspace deleted two characters. SendKeyEvent simply
+            //cannot express a key release here, and every event we send becomes another press.
+            //Sending only the press is therefore the correct mapping on this platform.
+            //Trade-off: pages never observe keyup. Editing keys and text input are unaffected
+            //(those act on keydown), but logic that waits for a release cannot work on macOS.
+            continue;
+#else
             CefKeyEvent keyEvent = new()
             {
                 WindowsKeyCode = (int)key,
+                NativeKeyCode = UwbCefClientUtils.GetMacNativeKeyCode(key),
                 EventType = CefKeyEventType.KeyUp,
                 Modifiers = modifiers | UwbCefClientUtils.GetKeyDirection(key)
             };
-            
+
             browserHost.SendKeyEvent(keyEvent);
+#endif
         }
 
         //Chars
         foreach (char c in keyboardEvent.Chars)
         {
+            //Control characters are commands, not text. They are already delivered through the
+            //KeyDown/KeyUp path above, so forwarding them as Char events too makes the browser
+            //apply them twice (e.g. Unity's Input.inputString includes '\b' for Backspace and
+            //'\n' for Enter, which would delete two characters per keypress).
+            if (char.IsControl(c))
+                continue;
+
             CefKeyEvent keyEvent = new()
             {
                 WindowsKeyCode = c,
@@ -194,7 +217,7 @@ internal class UwbCefClient : CefClient, IDisposable
                 EventType = CefKeyEventType.Char,
                 Modifiers = modifiers
             };
-            
+
             browserHost.SendKeyEvent(keyEvent);
         }
     }
