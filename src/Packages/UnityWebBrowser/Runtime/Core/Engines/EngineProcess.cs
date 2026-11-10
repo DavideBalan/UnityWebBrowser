@@ -4,7 +4,6 @@
 // This project is under the MIT license. See the LICENSE.md file for more details.
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using VoltstroStudios.UnityWebBrowser.Core.Engines.Process;
 using VoltstroStudios.UnityWebBrowser.Helper;
@@ -30,11 +29,11 @@ namespace VoltstroStudios.UnityWebBrowser.Core.Engines
         public EngineProcess(Engine engine, IWebBrowserLogger logger)
         {
 #if UNITY_STANDALONE_WIN
-            processHandle = new WindowProcess();
+            processHandle = new WindowProcess(logger);
 #elif UNITY_STANDALONE_LINUX
             processHandle = new LinuxProcess(logger);
 #elif UNITY_STANDALONE_OSX
-            processHandle = new MacOsProcess();
+            processHandle = new MacOsProcess(logger);
 #endif
             
             this.engine = engine;
@@ -55,9 +54,9 @@ namespace VoltstroStudios.UnityWebBrowser.Core.Engines
         ///     Starts the engine process
         /// </summary>
         /// <param name="arguments"></param>
-        /// <param name="onLogEvent"></param>
-        /// <param name="onErrorLogEvent"></param>
-        public void StartProcess(string arguments, DataReceivedEventHandler onLogEvent, DataReceivedEventHandler onErrorLogEvent)
+        /// <param name="onLogLine"></param>
+        /// <param name="onErrorLine"></param>
+        public void StartProcess(string arguments, Action<string> onLogLine, Action<string> onErrorLine)
         {
             Platform platform = WebBrowserUtils.GetRunningPlatform();
             string engineFullProcessPath = engine.GetEngineAppPath(platform);
@@ -66,7 +65,7 @@ namespace VoltstroStudios.UnityWebBrowser.Core.Engines
             logger.Debug($"Process Path: '{engineFullProcessPath}'\nWorking: '{engineDirectory}'");
             logger.Debug($"Arguments: '{arguments}'");
             
-            processHandle.StartProcess(engineFullProcessPath, engineDirectory, arguments, onLogEvent, onErrorLogEvent);
+            processHandle.StartProcess(engineFullProcessPath, engineDirectory, arguments, onLogLine, onErrorLine);
         }
 
         /// <summary>

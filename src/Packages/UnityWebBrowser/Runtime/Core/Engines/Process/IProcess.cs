@@ -4,13 +4,21 @@
 // This project is under the MIT license. See the LICENSE.md file for more details.
 
 using System;
-using System.Diagnostics;
 
 namespace VoltstroStudios.UnityWebBrowser.Core.Engines.Process
 {
     internal interface IProcess : IDisposable
     {
-        public void StartProcess(string executable, string workingDir, string arguments, DataReceivedEventHandler onLogEvent, DataReceivedEventHandler onErrorLogEvent);
+        /// <summary>
+        ///     Starts the process
+        /// </summary>
+        /// <param name="executable">Path to the executable</param>
+        /// <param name="workingDir">Working directory of the process</param>
+        /// <param name="arguments">Command line arguments</param>
+        /// <param name="onLogLine">Invoked for every line the process writes to stdout</param>
+        /// <param name="onErrorLine">Invoked for every line the process writes to stderr</param>
+        public void StartProcess(string executable, string workingDir, string arguments,
+            Action<string> onLogLine, Action<string> onErrorLine);
 
         public void KillProcess();
         

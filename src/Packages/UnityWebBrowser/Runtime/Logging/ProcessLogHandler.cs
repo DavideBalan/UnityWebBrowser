@@ -33,20 +33,42 @@ namespace VoltstroStudios.UnityWebBrowser.Logging
 
         internal void HandleErrorProcessLog(object sender, DataReceivedEventArgs e)
         {
-            if (e.Data == null)
-                return;
-
-            OnProcessErrorLog?.Invoke(e.Data);
+            HandleErrorProcessLog(e.Data);
         }
 
         internal void HandleOutputProcessLog(object sender, DataReceivedEventArgs e)
         {
-            if (e.Data == null)
+            HandleOutputProcessLog(e.Data);
+        }
+
+        /// <summary>
+        ///     Handles a stderr line coming from the engine process.
+        ///     <para>
+        ///         The native process implementations (used under IL2CPP, where
+        ///         <see cref="System.Diagnostics.Process" /> is not implemented) read the pipes themselves, so they
+        ///         pass the line as a plain <see cref="string" /> instead of a
+        ///         <see cref="DataReceivedEventArgs" />, whose constructor is internal.
+        ///     </para>
+        /// </summary>
+        internal void HandleErrorProcessLog(string line)
+        {
+            if (line == null)
+                return;
+
+            OnProcessErrorLog?.Invoke(line);
+        }
+
+        /// <summary>
+        ///     Handles a stdout line coming from the engine process
+        /// </summary>
+        internal void HandleOutputProcessLog(string line)
+        {
+            if (line == null)
                 return;
 
             try
             {
-                JsonLogStructure logStructure = ReadJsonLog(e.Data);
+                JsonLogStructure logStructure = ReadJsonLog(line);
 
                 if (logStructure.Level is LogSeverity.Debug or LogSeverity.Info)
                     logger.Debug($"[{logStructure.Category}]: {logStructure.Message}");
@@ -62,14 +84,14 @@ namespace VoltstroStudios.UnityWebBrowser.Logging
                 if(ignoreLogProcessJsonErrors)
                     return;
                 
-                logger.Error($"A log message from the UWB engine was not in a JSON format!\n\nRaw Log Message:\n{e.Data}");
+                logger.Error($"A log message from the UWB engine was not in a JSON format!\n\nRaw Log Message:\n{line}");
             }
             catch (Exception ex)
             {
-                logger.Error($"An error occured with processing a log event from the UWB engine!\n\nRaw Log Message:\n{e.Data}\n\nException:\n{ex}");
+                logger.Error($"An error occured with processing a log event from the UWB engine!\n\nRaw Log Message:\n{line}\n\nException:\n{ex}");
             }
 
-            OnProcessOutputLog?.Invoke(e.Data);
+            OnProcessOutputLog?.Invoke(line);
         }
 
         /// <summary>
